@@ -15,7 +15,7 @@ namespace SafetyTestWindowsFormsApp
         private List<LedSingleControl> leds = new List<LedSingleControl>();
         private Dictionary<string, bool> ledStates = new Dictionary<string, bool>();
         private SynchronizationContext context;
-        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        //private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         public LocalPlcManager()
         {
@@ -28,50 +28,57 @@ namespace SafetyTestWindowsFormsApp
             context = SynchronizationContext.Current;
         }
 
-        public void AddControlsToForm(Form form)
+        public void AddControlsToTabControl(TabControl tabControl)
         {
-            AddButtonsAndTextBoxes(form, "ESB", "EmergencyStopButtons_TS", 20, 20, 8, Color.LightSalmon);
-            AddButtonsAndTextBoxes(form, "LC", "Lightcurtains_TS", 180, 20, 8, Color.LightYellow);
-            AddButtonsAndTextBoxes(form, "IG", "InterlockingGuards_TS", 340, 20, 4, Color.LightGray);
-            AddSingleButtonAndTextBox(form, "IG", "bInterlockingGuard1_MZ", 340, 20 + 4 * 40, "IG1 (MZ)", Color.LightGray);
-            AddButtonsAndTextBoxes(form, "RB", "ResetButtons_TS", 500, 20, 8, Color.LightBlue);
-            AddLeds(form, "LampRB", "LampResetButtons_TS", 580, 15, 8);
-            AddAdditionalButtons(form);
-        }
+            int i = 0;
 
-        private void AddAdditionalButtons(Form form)
-        {
-            int additionalButtonY = 20 + 8 * 40;
-            AddSingleButtonAndTextBox(form, "ESB", "bEmergencyStopButton1_MZ", 20, additionalButtonY, "ESB1 (MZ)", Color.LightSalmon);
-            AddSingleButtonAndTextBox(form, "LC", "bLightcurtain1_MZ", 180, additionalButtonY, "LC1 (MZ)", Color.LightYellow);
-            AddSingleButtonAndTextBox(form, "RB", "bResetButton1_MZ", 500, additionalButtonY, "RB1 (MZ)", Color.LightBlue);
-        }
-
-        private void AddButtonsAndTextBoxes(Form form, string prefix, string variableArrayName, int buttonX, int startY, int count, Color buttonColor)
-        {
-            for (int i = 0; i < count; i++)
+            foreach(TabPage tab in tabControl.TabPages)
             {
-                AddSingleButtonAndTextBox(form, prefix, $"arr{variableArrayName}[{i}]", buttonX, startY + i * 40, $"{prefix}{i + 1} (TS)", buttonColor);
+                AddButtonsAndTextBoxesToPage(tab, i, "ESB", "EmergencyStopButtons_TS", 20, 20, 8, Color.LightSalmon);
+                AddButtonsAndTextBoxesToPage(tab, i, "LC", "Lightcurtains_TS", 180, 20, 8, Color.LightYellow);
+                AddButtonsAndTextBoxesToPage(tab, i, "IG", "InterlockingGuards_TS", 340, 20, 4, Color.LightGray);
+                AddButtonsAndTextBoxesToPage(tab, i, "RB", "ResetButtons_TS", 500, 20, 8, Color.LightBlue);
+                AddAdditionalButtonsToPage(tab, i);
+                AddLedsToPage(tab, i, "LampRB", "LampResetButtons_TS", 580, 15, 8);
+                i++;
             }
         }
 
-        private void AddSingleButtonAndTextBox(Form form, string prefix, string variableName, int buttonX, int yPosition, string buttonText, Color buttonColor)
+        private void AddAdditionalButtonsToPage(TabPage tabPage, int trolleyIndex)
         {
-            var button = CreateButton(buttonText, buttonX, yPosition, buttonColor);
-            var textBox = CreateTextBox(buttonX + 80, yPosition);
-
-            AddVariableHandle(buttonText, variableName);
-            ConfigureButtonEvents(button, buttonColor);
-
-            form.Controls.Add(button);
-            form.Controls.Add(textBox);
+            int additionalButtonY = 20 + 8 * 40;
+            AddSingleButtonAndTextBoxToPage(tabPage, trolleyIndex, "ESB", "bEmergencyStopButton1_MZ", 20, additionalButtonY, "ESB1 (MZ)", Color.LightSalmon);
+            AddSingleButtonAndTextBoxToPage(tabPage, trolleyIndex, "LC", "bLightcurtain1_MZ", 180, additionalButtonY, "LC1 (MZ)", Color.LightYellow);
+            AddSingleButtonAndTextBoxToPage(tabPage, trolleyIndex, "RB", "bResetButton1_MZ", 500, additionalButtonY, "RB1 (MZ)", Color.LightBlue);
+            AddSingleButtonAndTextBoxToPage(tabPage, trolleyIndex, "IG", "bInterlockingGuard1_MZ", 340, 20 + 4 * 40, "IG1 (MZ)", Color.LightGray);
         }
 
-        private Button CreateButton(string buttonText, int x, int y, Color color)
+        private void AddButtonsAndTextBoxesToPage(TabPage tabPage, int trolleyIndex, string prefix, string variableArrayName, int buttonX, int startY, int count, Color buttonColor)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                AddSingleButtonAndTextBoxToPage(tabPage, trolleyIndex, prefix, $"arr{variableArrayName}[{i}]", buttonX, startY + i * 40, $"{prefix}{i + 1} (TS)", buttonColor);
+            }
+        }
+
+        private void AddSingleButtonAndTextBoxToPage(TabPage tabPage, int trolleyIndex, string prefix, string variableName, int buttonX, int yPosition, string buttonText, Color buttonColor)
+        {
+            var button = CreateButton(trolleyIndex, buttonText, buttonX, yPosition, buttonColor);
+            var textBox = CreateTextBox(buttonX + 80, yPosition);
+
+            AddVariableHandle(trolleyIndex, buttonText, variableName);
+            ConfigureButtonEvents(button, buttonColor);
+
+            tabPage.Controls.Add(button);
+            tabPage.Controls.Add(textBox);
+        }
+
+        private Button CreateButton(int trolleyIndex, string buttonText, int x, int y, Color color)
         {
             Button button = new Button
             {
                 Text = buttonText,
+                Tag = $"{trolleyIndex}:{buttonText}",
                 Location = new Point(x, y),
                 BackColor = color,
                 AutoSize = false,
@@ -92,23 +99,23 @@ namespace SafetyTestWindowsFormsApp
             };
         }
 
-        private void AddVariableHandle(string buttonText, string variableName)
+        private void AddVariableHandle(int trolleyIndex, string buttonText, string variableName)
         {
             try
             {
-                uint handle = localConnector.CreateVariableHandle($"MachineObjectsArray.SafetyTestTrolley[0].{variableName}");
-                if (!variableHandleData.ContainsKey(buttonText))
+                uint handle = localConnector.CreateVariableHandle($"MachineObjectsArray.SafetyTestTrolley[{trolleyIndex}].{variableName}");
+                if (!variableHandleData.ContainsKey($"{trolleyIndex}:{buttonText}"))
                 {
-                    variableHandleData.Add(buttonText, handle);
+                    variableHandleData.Add($"{trolleyIndex}:{buttonText}", handle);
                 }
                 else
                 {
-                    ShowError($"Duplicate key detected for {buttonText}. Please check your configuration.");
+                    ShowError($"Duplicate key detected for {$"{trolleyIndex}:{buttonText}"}. Please check your configuration.");
                 }
             }
             catch (Exception ex)
             {
-                ShowError($"Error creating variable handle for {buttonText}: {ex.Message}");
+                ShowError($"Error creating variable handle for {trolleyIndex}:{buttonText}: {ex.Message}");
             }
         }
 
@@ -137,7 +144,7 @@ namespace SafetyTestWindowsFormsApp
         private void Button_MouseDown(object sender, MouseEventArgs e, Color originalColor)
         {
             Button button = (Button)sender;
-            uint variableHandle = variableHandleData[button.Text];
+            uint variableHandle = variableHandleData[(string)button.Tag];
             localConnector.WriteBool(variableHandle, true);
             button.BackColor = GetPressedColor(originalColor);
         }
@@ -169,46 +176,47 @@ namespace SafetyTestWindowsFormsApp
         private void Button_MouseUp(object sender, MouseEventArgs e, Color originalColor)
         {
             Button button = (Button)sender;
-            uint variableHandle = variableHandleData[button.Text];
+            uint variableHandle = variableHandleData[(string)button.Tag];
             localConnector.WriteBool(variableHandle, false);
             button.BackColor = originalColor;
         }
 
-        private void AddLeds(Form form, string prefix, string variableArrayName, int ledX, int startY, int count)
+        private void AddLedsToPage(TabPage tabPage, int trolleyIndex, string prefix, string variableArrayName, int ledX, int startY, int count)
         {
             for (int i = 0; i < count; i++)
             {
-                AddSingleLed(form, prefix, $"arr{variableArrayName}[{i}]", ledX, startY + i * 40, $"{prefix}{i + 1} (TS)");
+                AddSingleLedToPage(tabPage, trolleyIndex, prefix, $"arr{variableArrayName}[{i}]", ledX, startY + i * 40, $"{prefix}{i + 1} (TS)");
             }
-            AddSingleLed(form, prefix, "bLampResetButton1_MZ", ledX, startY + count * 40, $"{prefix}{count + 1} (MZ)");
+            AddSingleLedToPage(tabPage, trolleyIndex, prefix, "bLampResetButton1_MZ", ledX, startY + count * 40, $"{prefix}{count + 1} (MZ)");
         }
 
-        private void AddSingleLed(Form form, string prefix, string variableName, int ledX, int yPosition, string ledText)
+        private void AddSingleLedToPage(TabPage tabPage, int trolleyIndex, string prefix, string variableName, int ledX, int yPosition, string ledText)
         {
             LedSingleControl led = new LedSingleControl
             {
                 Width = 35,
                 Height = 35,
+                Tag = $"{trolleyIndex}:{ledText}",
                 Text = ledText,
                 Value = false,
                 Location = new Point(ledX + 80, yPosition),
                 OnColor = Color.Blue
             };
 
-            AddVariableHandle(ledText, variableName);
+            AddVariableHandle(trolleyIndex, ledText, variableName);
             leds.Add(led);
-            ledStates[ledText] = false;
+            ledStates[(string)led.Tag] = false;
 
-            form.Controls.Add(led);
+            tabPage.Controls.Add(led);
         }
 
         public void StartCyclicReadLedStates()
         {
             Task.Run(async () =>
             {
-                while (!cancellationTokenSource.Token.IsCancellationRequested)
+                while (true)
                 {
-                    await Task.Delay(500, cancellationTokenSource.Token);
+                    await Task.Delay(100);
                     ReadLedStates();
                 }
             });
@@ -220,11 +228,11 @@ namespace SafetyTestWindowsFormsApp
             {
                 try
                 {
-                    uint handle = variableHandleData[led.Text];
+                    uint handle = variableHandleData[(string)led.Tag];
                     bool currentValue = localConnector.ReadBool(handle);
-                    if (ledStates[led.Text] != currentValue)
+                    if (ledStates[(string)led.Tag] != currentValue)
                     {
-                        ledStates[led.Text] = currentValue;
+                        ledStates[(string)led.Tag] = currentValue;
                         UpdateLedControl(led, currentValue);
                     }
                 }

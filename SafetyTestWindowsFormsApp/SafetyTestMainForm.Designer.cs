@@ -42,7 +42,7 @@
             dataGridView1.Location = new Point(12, 514);
             dataGridView1.Name = "dataGridView1";
             dataGridView1.RowTemplate.Height = 25;
-            dataGridView1.Size = new Size(776, 150);
+            dataGridView1.Size = new Size(776, 189);
             dataGridView1.TabIndex = 0;
             // 
             // tabControl1
@@ -52,7 +52,7 @@
             tabControl1.Location = new Point(12, 12);
             tabControl1.Name = "tabControl1";
             tabControl1.SelectedIndex = 0;
-            tabControl1.Size = new Size(776, 496);
+            tabControl1.Size = new Size(776, 458);
             tabControl1.TabIndex = 1;
             // 
             // tabPage1
@@ -60,7 +60,7 @@
             tabPage1.Location = new Point(4, 24);
             tabPage1.Name = "tabPage1";
             tabPage1.Padding = new Padding(3);
-            tabPage1.Size = new Size(768, 468);
+            tabPage1.Size = new Size(768, 430);
             tabPage1.TabIndex = 0;
             tabPage1.Text = "SafetyTestTrolley1";
             tabPage1.UseVisualStyleBackColor = true;
@@ -79,7 +79,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 676);
+            ClientSize = new Size(800, 715);
             Controls.Add(tabControl1);
             Controls.Add(dataGridView1);
             Name = "SafetyTestMainForm";
