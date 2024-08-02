@@ -584,6 +584,7 @@ namespace SafetyTestWindowsFormsApp
             };
 
             AddVariableHandle(ledText, variableName);
+
             leds.Add(led);
             ledStates[ledText] = false;
 
